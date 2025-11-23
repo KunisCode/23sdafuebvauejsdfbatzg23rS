@@ -285,10 +285,7 @@ $labelTimer.Add_Tick({
 })
 
 # ===================== CLEANUP =====================
-$form.Add_FormClosing({
-    $timer.Stop()
-    $labelTimer.Stop()
-})
+
 
 $timer.Start()
 $labelTimer.Start()
