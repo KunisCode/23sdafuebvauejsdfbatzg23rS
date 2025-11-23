@@ -155,4 +155,3 @@ $form.ShowDialog() | Out-Null
 # Nach GUI: Optional final Job-Cleanup (läuft weiter, bis manuell kill)
 # $startJobs | % { Receive-Job $_; Remove-Job $_ -Force }
 
-
