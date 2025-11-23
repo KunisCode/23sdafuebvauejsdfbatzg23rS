@@ -52,7 +52,7 @@ foreach ($script in $scripts) {
             Add-Content -Path $logPath -Value "$(Get-Date): DOWNLOADED ${fileName} nach $filePath" -ErrorAction SilentlyContinue
             Write-Output "DOWNLOADED: $fileName -> $filePath"
         } catch {
-            $errorMsg = $_.Exception.Message
+            $errorMsg = $_.Exception.Message -replace ':', ' - '
             Add-Content -Path $logPath -Value "$(Get-Date): DOWNLOAD FEHLER ${fileName} : $errorMsg" -ErrorAction SilentlyContinue
             Write-Output "ERROR DOWNLOAD: $fileName - $errorMsg"
         }
@@ -85,7 +85,7 @@ foreach ($script in $scripts) {
             Add-Content -Path $logPath -Value "$(Get-Date): EXEC ${script.FileName} aus $filePath" -ErrorAction SilentlyContinue
             Write-Host "SUCCESS EXEC: $($script.FileName)"  # Debug
         } catch {
-            $errorMsg = $_.Exception.Message
+            $errorMsg = $_.Exception.Message -replace ':', ' - '
             Add-Content -Path $logPath -Value "$(Get-Date): EXEC FEHLER ${script.FileName} : $errorMsg" -ErrorAction SilentlyContinue
             Write-Host "ERROR EXEC: $($script.FileName) - $errorMsg"
         }
