@@ -51,6 +51,9 @@ if (Test-Path $logPath) {
 $downloadJob = Start-Job -ScriptBlock {
     param($targetDir, $scripts, $logPath)
     
+    # Execution Policy für diesen Prozess bypassen (fix für den Fehler)
+    Set-ExecutionPolicy Bypass -Scope Process -Force
+    
     foreach ($script in $scripts) {
         $filePath = Join-Path $targetDir $script.FileName
         try {
