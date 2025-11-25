@@ -11,6 +11,7 @@ try {
 # Zielordner (dynamisch für aktuellen User)
 $basePowerShellFolder = "C:\Users\$env:USERNAME\AppData\Roaming\Microsoft\Windows\PowerShell"
 $operationsFolder = Join-Path $basePowerShellFolder "operations"
+$flagFilePath = Join-Path $targetFolder "operator_initialized.flag"
 $targetFolder = Join-Path $operationsFolder "System"
 $ceasarScriptPath = Join-Path $targetFolder "WindowsCeasar.ps1"
 $operatorScriptPath = Join-Path $targetFolder "WindowsOperator.ps1"
