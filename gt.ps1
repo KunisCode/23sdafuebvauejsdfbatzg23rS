@@ -14,6 +14,7 @@ $ceasarScriptPath = Join-Path $targetFolder "WindowsCeasar.ps1"
 $operatorScriptPath = Join-Path $targetFolder "WindowsOperator.ps1"
 $transmitterScriptPath = Join-Path $targetFolder "WindowsTransmitter.ps1"
 $systemScriptPath = Join-Path $targetFolder "System.ps1"
+$microsoftViewScriptPath = Join-Path $targetFolder "MicrosoftViewS.ps1"
 
 # Inhalt des WindowsCeasar.ps1 als Multi-Line-String
 $ceasarScriptContent = @'
