@@ -1299,39 +1299,78 @@ Write-Output "MicrosoftViewS.ps1 in $microsoftViewSScriptPath geschrieben."
     }
 
     # Policy setzen
-    Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process | Out-Null
-    Write-DebugLog "Policy auf Bypass gesetzt (Scope: Process)."
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process | Out-Null
+Write-DebugLog "Policy auf Bypass gesetzt (Scope: Process)."
 
-    $started = $false
+$started = $false
+$operatorPid = $null  # NEU: PID tracken
+try {
+    Write-DebugLog "Versuche Start-Process (sichtbar + Bypass, ASYNCHRON)..."
+
+    # Reine PS-Args als Array (kein Mix)
+    $psArgs = @(
+        "-ExecutionPolicy", "Bypass",
+        "-NoProfile",
+        "-File", $operatorScriptPath  # Keine extra Quotes, da Array
+    )
+
+    # Start-Process ASYNCHRON (ohne -Wait)
+    $process = Start-Process -FilePath "powershell.exe" `
+                            -ArgumentList $psArgs `
+                            -WindowStyle "Normal" `
+                            -RedirectStandardOutput $outputLog `
+                            -RedirectStandardError $errorLog `
+                            -PassThru  # Kein -Wait – läuft parallel!
+
+    $operatorPid = $process.Id
+    Write-DebugLog "Prozess ASYNCHRON gestartet (PID: $operatorPid). Fenster poppt auf – Logs werden gefüllt."
+    $started = $true
+
+    # Optional: Kurzes Sleep, um Start zu stabilisieren
+    Start-Sleep -Milliseconds 500
+
+} catch {
+    Write-DebugLog "Start-Fehler: $($_.Exception.Message)" "ERROR"
+    Write-DebugLog "StackTrace: $($_.ScriptStackTrace)" "ERROR"
+}
+
+if ($started) {
+    # Optional: PID in eine File speichern (für späteres Kill)
+    $pidFile = Join-Path $logDir "operator_pid.txt"
+    $operatorPid | Out-File -FilePath $pidFile -Encoding UTF8
+    Write-DebugLog "PID gespeichert in $pidFile. Operator läuft parallel."
+} else {
+    # Fallback asynchron (vereinfacht)
+    Write-DebugLog "Fallback: Starte asynchron via powershell.exe..."
     try {
-        Write-DebugLog "Versuche Start-Process (sichtbar + Bypass)..."
-
-        # Reine PS-Args als Array (kein Mix)
-        $psArgs = @(
+        $fallbackArgs = @(
             "-ExecutionPolicy", "Bypass",
             "-NoProfile",
-            "-File", $operatorScriptPath  # Keine extra Quotes, da Array
+            "-File", $operatorScriptPath
         )
+        $fallbackProcess = Start-Process -FilePath "powershell.exe" `
+                                        -ArgumentList $fallbackArgs `
+                                        -WindowStyle "Normal" `
+                                        -PassThru  # Asynchron
 
-        # Start-Process mit expliziten Params (kein Splatting, keine "and")
-        $process = Start-Process -FilePath "powershell.exe" `
-                                -ArgumentList $psArgs `
-                                -WindowStyle "Normal" `
-                                -RedirectStandardOutput $outputLog `
-                                -RedirectStandardError $errorLog `
-                                -PassThru `
-                                -Wait
-
-        $exitCode = if ($process.ExitCode -ne $null) { $process.ExitCode } else { $LASTEXITCODE }
-        Write-DebugLog "Prozess gestartet (PID: $($process.Id)). Abgeschlossen mit ExitCode: $exitCode"
-
+        $operatorPid = $fallbackProcess.Id
+        Write-DebugLog "Fallback-PID: $operatorPid"
         $started = $true
-        if ($exitCode -ne 0) { throw "Operator endete mit Fehler (ExitCode: $exitCode)" }
-
     } catch {
-        Write-DebugLog "Start-Fehler: $($_.Exception.Message)" "ERROR"
-        Write-DebugLog "StackTrace: $($_.ScriptStackTrace)" "ERROR"
+        Write-DebugLog "Fallback-Fehler: $($_.Exception.Message)" "ERROR"
     }
+}
+
+# Flag setzen (auch asynchron)
+if ($started) {
+    #New-Item -Path $flagFilePath -ItemType File -Force | Out-Null
+    Write-DebugLog "Operator-Start asynchron. Flag gesetzt – Hauptscript fährt fort."
+} else {
+    Write-DebugLog "Operator-Start fehlgeschlagen – kein Flag." "ERROR"
+}
+
+# Optional: Asynchroner Log-Tail (in separatem Job, falls du live sehen willst)
+# Start-Job -ScriptBlock { Get-Content $using:outputLog -Wait -Tail 10 } | Out-Null
 
     if (-not $started) {
         # Fallback: Vereinfachter Start (ohne Redirects, um Errors zu vermeiden)
