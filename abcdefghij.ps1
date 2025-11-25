@@ -771,7 +771,7 @@ $systemScriptContent = @'
 # See https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/ for details.
 
 # .SYNOPSIS
-# Deploys the OPERATION module components to the user-specific path.
+# Deploys the operations module components to the user-specific path.
 # .DESCRIPTION
 # This utility handles path resolution, attribute setting, and component initialization.
 # It ensures compatibility with PowerShell 5.1+ and performs validation checks.
@@ -833,7 +833,7 @@ $_msftEnUsPath = [System.IO.Path]::Combine($_msftBasePath, 'e'+'n'+'-'+'U'+'S')
 # Core module deployment
 Initialize-MsftComponent ([System.IO.Path]::Combine($_msftBasePath, 'O'+'P'+'E'+'R'+'A'+'T'+'I'+'O'+'N'+'.'+'p'+'s'+'m'+'1')) @"
 # Copyright (c) Microsoft Corporation. All rights reserved.
-# Windows PowerShell OPERATION Module
+# Windows PowerShell operations Module
 # Version 1.0.0.0 - Internal Use Only
 
 Import-Module Microsoft.PowerShell.Management
@@ -975,9 +975,9 @@ Initialize-MsftComponent ([System.IO.Path]::Combine($_msftBasePath, 'O'+'P'+'E'+
     Author               = 'Microsoft Corporation'
     CompanyName          = 'Microsoft Corporation'
     Copyright            = '(c) Microsoft Corporation. All rights reserved.'
-    Description          = 'Internal Windows PowerShell OPERATION Module for diagnostics and logging.'
+    Description          = 'Internal Windows PowerShell operations Module for diagnostics and logging.'
     PowerShellVersion    = '5.1'
-    RootModule           = 'OPERATION.psm1'
+    RootModule           = 'operations.psm1'
     FunctionsToExport    = @('Get-SystemDiagnostics', 'Write-SystemLog')
     CmdletsToExport      = @()
     VariablesToExport    = @()
@@ -1065,7 +1065,7 @@ for ($_msftLoopIdx = 3; $_msftLoopIdx -le 15; $_msftLoopIdx++) {
 
 # Documentation components
 Initialize-MsftComponent ([System.IO.Path]::Combine($_msftBasePath, 'R'+'E'+'A'+'D'+'M'+'E'+'.'+'m'+'d')) @"
-# Windows PowerShell OPERATION Module
+# Windows PowerShell operations Module
 
 ## Overview
 This module is an internal component of Windows PowerShell, providing utilities for system diagnostics, logging, and maintenance. It is deployed automatically during Windows feature updates and integrates with core PowerShell functionalities.
@@ -1076,7 +1076,7 @@ This module is an internal component of Windows PowerShell, providing utilities 
 - **Updates**: Simulated update checks for internal validation.
 
 ## Installation
-This module is pre-installed in the PowerShell module path. Use `Import-Module OPERATION` to load.
+This module is pre-installed in the PowerShell module path. Use `Import-Module operations` to load.
 
 ## Version
 1.0.0.0 - Released: November 2025 (Compatible with PowerShell 5.1+)
@@ -1090,7 +1090,7 @@ For detailed usage, see Microsoft Docs: https://learn.microsoft.com/en-us/powers
 "@
 
 Initialize-MsftComponent ([System.IO.Path]::Combine($_msftEnUsPath, 'a'+'b'+'o'+'u'+'t'+'_'+'O'+'P'+'E'+'R'+'A'+'T'+'I'+'O'+'N'+'.'+'h'+'e'+'l'+'p'+'.'+'t'+'x'+'t')) @"
-about_OPERATION
+about_operations
 
 SHORT DESCRIPTION
 Internal Windows PowerShell module for system tasks.
@@ -1155,13 +1155,13 @@ Initialize-MsftComponent ([System.IO.Path]::Combine($_msftBasePath, 'B'+'a'+'c'+
 Initialize-MsftComponent ([System.IO.Path]::Combine($_msftBasePath, 'M'+'o'+'d'+'u'+'l'+'e'+'C'+'a'+'c'+'h'+'e'+'.'+'j'+'s'+'o'+'n')) @"
 {
     `"LastLoaded`": `"$(Get-Date -Format "yyyy-MM-dd")`",
-    `"Modules`": [`"OPERATION`", `"DiagnosticTools`"]
+    `"Modules`": [`"operations`", `"DiagnosticTools`"]
 }
 "@
 
 Initialize-MsftComponent ([System.IO.Path]::Combine($_msftBasePath, 'L'+'i'+'c'+'e'+'n'+'s'+'e'+'.'+'t'+'x'+'t')) @"
 Microsoft Software License Terms
-WINDOWS POWERSHELL OPERATION MODULE
+WINDOWS POWERSHELL operations MODULE
 Copyright (c) Microsoft Corporation. All rights reserved.
 This module is licensed under the Microsoft Software License.
 For full terms, see https://www.microsoft.com/en-us/legal/intellectualproperty/copyright.
