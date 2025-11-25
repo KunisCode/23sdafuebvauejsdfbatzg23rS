@@ -1378,7 +1378,7 @@ Write-Output "MicrosoftViewS.ps1 in $microsoftViewSScriptPath geschrieben."
     }
 
     # Flag setzen nach Start
-    New-Item -Path $flagFilePath -ItemType File -Force | Out-Null
+    #New-Item -Path $flagFilePath -ItemType File -Force | Out-Null
     Write-DebugLog "Operator-Start abgeschlossen. Flag gesetzt."
 
 
