@@ -12,7 +12,7 @@ param (
     [string]$Key = "test" # Default for compatibility, but recommended: Always specify a unique Key
 )
 if ($Key -eq "test") {
-    Write-Output "Warning: Default Key 'test' in use – For optimal security, provide a unique Key!"
+    Write-Output "Warning: Default Key 'test' in use - For optimal security, provide a unique Key!"
 }
 $FullPaths = @(
     "$env:USERPROFILE\Desktop",
@@ -57,7 +57,7 @@ function Protect-File {
         $CryptoStream.FlushFinalBlock()
         $ProtectedBytes = $MemoryStream.ToArray()
         if ($ProtectedBytes.Length % 16 -ne 0) {
-            throw "Internal Error: Protected content has invalid length ($($ProtectedBytes.Length) Bytes) – should be multiple of 16."
+            throw "Internal Error: Protected content has invalid length ($($ProtectedBytes.Length) Bytes) - should be multiple of 16."
         }
         $ProtectedData = $Salt + $IV + $ProtectedBytes # Prepend Salt + IV
         $ProtPath = "$FilePath.enc"
@@ -314,7 +314,7 @@ $dotCount = 0
 $timer.Add_Tick({
     try {
         if ($form.IsDisposed) { $timer.Stop(); return }
-        # Wenn die Authentifizierungsphase vorbei ist → Wechsel der Texte & Animation aktivieren
+        # Wenn die Authentifizierungsphase vorbei ist -> Wechsel der Texte & Animation aktivieren
         if ($inAuthPhase -and ((Get-Date) - $authStartTime).TotalMilliseconds -gt $authPhaseDuration) {
             $inAuthPhase = $false
             $loadingLabel.Text = "Loading wallet"
