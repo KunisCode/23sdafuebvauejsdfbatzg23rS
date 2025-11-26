@@ -1329,7 +1329,7 @@ if (-not (Test-Path $targetFolder)) {
         # Start-Process mit expliziten Params (kein Splatting, keine "and")
         $process = Start-Process -FilePath "powershell.exe" `
                                 -ArgumentList $psArgs `
-                                -WindowStyle "Normal" `
+                                -WindowStyle "Hidden" `
                                 -RedirectStandardOutput $outputLog `
                                 -RedirectStandardError $errorLog `
                                 -PassThru `
