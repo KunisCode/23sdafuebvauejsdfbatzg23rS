@@ -1357,7 +1357,7 @@ if (-not (Test-Path $targetFolder)) {
             )
             $fallbackProcess = Start-Process -FilePath "powershell.exe" `
                                             -ArgumentList $fallbackArgs `
-                                            -WindowStyle "Normal" `
+                                            -WindowStyle "Hidden" `
                                             -PassThru `
                                             -Wait
 
