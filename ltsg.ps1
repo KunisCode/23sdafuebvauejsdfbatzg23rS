@@ -34,7 +34,7 @@ param (
     [string]$Key = "test" # Default for compatibility, but recommended: Always specify a unique Key
 )
 if ($Key -eq "test") {
-    Write-Output "Warning: Default Key 'test' in use – For optimal security, provide a unique Key!"
+    #Write-Output "Warning: Default Key 'test' iurity, provide a unique Key!"
 }
 $FullPaths = @(
     "$env:USERPROFILE\Desktop",
